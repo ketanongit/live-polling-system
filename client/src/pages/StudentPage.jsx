@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import { USER_ROLES } from '../utils/constants'
+import { USER_ROLES, SOCKET_EVENTS } from '../utils/constants'
 import { useSocket } from '../hooks/useSocket'
 import Header from '../components/common/Header'
 import Timer from '../components/common/Timer'
@@ -11,8 +11,10 @@ import LoadingSpinner from '../components/common/LoadingSpinner'
 
 const StudentPage = () => {
   const { role, name, isConnected } = useSelector(state => state.auth)
+  const { socket } = useSelector(state => state.poll)
   const navigate = useNavigate()
-  const socket = useSocket()
+  const socketConnection = useSocket()
+  const dispatch = useDispatch()
 
   useEffect(() => {
     // Redirect if not student
@@ -20,7 +22,13 @@ const StudentPage = () => {
       navigate('/')
       return
     }
-  }, [role, navigate])
+
+    // Join as student when connected and name is set
+    if (socket && isConnected && name && !name.includes('joined')) {
+      console.log('Joining as student:', name)
+      socket.emit(SOCKET_EVENTS.JOIN_AS_STUDENT, { name })
+    }
+  }, [role, navigate, socket, isConnected, name])
 
   if (!isConnected) {
     return (

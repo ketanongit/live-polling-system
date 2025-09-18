@@ -1,10 +1,14 @@
 import React from 'react'
 import { useSelector } from 'react-redux'
+import { POLL_STATUS } from '../../utils/constants'
 
 const Timer = () => {
-  const { timeLeft, status } = useSelector(state => state.poll)
+  const { timeLeft, status, currentPoll } = useSelector(state => state.poll)
   
-  if (status !== 'active') return null
+  // Only show timer if there's an active poll
+  if (!currentPoll || status !== POLL_STATUS.ACTIVE || timeLeft <= 0) {
+    return null
+  }
   
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60)
@@ -13,11 +17,17 @@ const Timer = () => {
   }
   
   const isUrgent = timeLeft <= 10
+  const isVeryUrgent = timeLeft <= 5
   
   return (
     <div className={`
-      fixed top-4 right-4 z-40 px-4 py-2 rounded-lg font-bold text-lg
-      ${isUrgent ? 'bg-red-500 text-white animate-pulse' : 'bg-red-100 text-red-600'}
+      fixed top-4 right-4 z-50 px-4 py-2 rounded-lg font-bold text-lg shadow-lg
+      ${isVeryUrgent 
+        ? 'bg-red-600 text-white animate-pulse' 
+        : isUrgent 
+        ? 'bg-red-500 text-white' 
+        : 'bg-red-100 text-red-700 border border-red-300'
+      }
     `}>
       {formatTime(timeLeft)}
     </div>

@@ -30,7 +30,8 @@ const gameState = {
   timer: null,
   timeLeft: 60,
   isActive: false,
-  teacherSocketId: null
+  teacherSocketId: null,
+  pollStartTime: null
 };
 
 // Helper functions
@@ -53,11 +54,32 @@ function calculateResults() {
   return resultsArray;
 }
 
+function broadcastStudentUpdate() {
+  if (gameState.teacherSocketId) {
+    io.to(gameState.teacherSocketId).emit('student_list_updated', {
+      students: Array.from(gameState.students.values())
+    });
+  }
+}
+
+function broadcastResults() {
+  const results = calculateResults();
+  const answeredCount = Array.from(gameState.students.values()).filter(s => s.hasAnswered).length;
+  
+  io.emit('results_updated', {
+    results,
+    totalParticipants: gameState.students.size,
+    answered: answeredCount
+  });
+}
+
 function endPoll() {
   if (gameState.currentPoll) {
+    console.log('Ending poll:', gameState.currentPoll.question);
+    
     // Save to history
     const finalResults = calculateResults();
-    gameState.pollHistory.push({
+    gameState.pollHistory.unshift({
       id: Date.now(),
       question: gameState.currentPoll.question,
       options: gameState.currentPoll.options,
@@ -72,11 +94,12 @@ function endPoll() {
       gameState.timer = null;
     }
     
-    // Reset poll state
+    // Reset poll state but keep the poll for results viewing
     gameState.isActive = false;
-    gameState.timeLeft = 60;
+    gameState.timeLeft = 0;
+    gameState.pollStartTime = null;
     
-    // Reset student answered status
+    // Reset student answered status for next poll
     gameState.students.forEach(student => {
       student.hasAnswered = false;
     });
@@ -86,21 +109,52 @@ function endPoll() {
       results: finalResults,
       totalParticipants: gameState.students.size
     });
+    
+    // Update teacher with latest student list
+    broadcastStudentUpdate();
+    
+    console.log('Poll ended successfully');
   }
 }
 
 function startTimer(duration) {
+  // Clear existing timer
+  if (gameState.timer) {
+    clearInterval(gameState.timer);
+    gameState.timer = null;
+  }
+  
   gameState.timeLeft = duration;
+  gameState.pollStartTime = Date.now();
+  gameState.isActive = true;
+  
+  console.log('Starting timer for', duration, 'seconds');
+  
   gameState.timer = setInterval(() => {
     gameState.timeLeft--;
     
-    // Broadcast time update
+    // Broadcast time update to all clients
     io.emit('timer_update', { timeLeft: gameState.timeLeft });
     
+    console.log('Timer update:', gameState.timeLeft);
+    
     if (gameState.timeLeft <= 0) {
+      console.log('Timer expired, ending poll');
       endPoll();
     }
   }, 1000);
+}
+
+function canCreateNewPoll() {
+  // Can create if no active poll OR all students have answered
+  if (!gameState.currentPoll || !gameState.isActive) {
+    return true;
+  }
+  
+  const allStudentsAnswered = gameState.students.size > 0 && 
+    Array.from(gameState.students.values()).every(s => s.hasAnswered);
+  
+  return allStudentsAnswered;
 }
 
 // Socket event handlers
@@ -155,22 +209,24 @@ io.on('connection', (socket) => {
 
     socket.join('students');
     
-    // Notify student of successful join
+    // Send current poll state to student (including active polls)
     socket.emit('student_joined', {
       currentPoll: gameState.currentPoll,
       isActive: gameState.isActive,
       timeLeft: gameState.timeLeft,
-      hasAnswered: false
+      hasAnswered: false,
+      results: gameState.isActive ? [] : calculateResults() // Only show results if poll ended
     });
 
     // Notify teacher about new student
-    if (gameState.teacherSocketId) {
-      io.to(gameState.teacherSocketId).emit('student_list_updated', {
-        students: Array.from(gameState.students.values())
-      });
+    broadcastStudentUpdate();
+    
+    // If there's an active poll, also send current results to teacher
+    if (gameState.isActive) {
+      broadcastResults();
     }
 
-    console.log('Student joined:', name);
+    console.log('Student joined:', name, 'Active poll:', !!gameState.currentPoll);
   });
 
   // Teacher creates a poll
@@ -188,9 +244,17 @@ io.on('connection', (socket) => {
     }
 
     // Check if can start new poll
-    if (gameState.isActive) {
-      socket.emit('error', { message: 'A poll is already active' });
+    if (!canCreateNewPoll()) {
+      socket.emit('error', { message: 'Cannot create new poll until all students answer current poll' });
       return;
+    }
+
+    console.log('Creating new poll:', question);
+
+    // Clear any existing timer
+    if (gameState.timer) {
+      clearInterval(gameState.timer);
+      gameState.timer = null;
     }
 
     // Create new poll
@@ -212,9 +276,7 @@ io.on('connection', (socket) => {
       student.hasAnswered = false;
     });
 
-    gameState.isActive = true;
-
-    // Start timer
+    // Start timer and set active
     startTimer(timeLimit);
 
     // Notify all clients
@@ -223,7 +285,10 @@ io.on('connection', (socket) => {
       timeLeft: gameState.timeLeft
     });
 
-    console.log('Poll created:', question);
+    // Update teacher with student list
+    broadcastStudentUpdate();
+
+    console.log('Poll created successfully:', question);
   });
 
   // Student submits answer
@@ -262,17 +327,16 @@ io.on('connection', (socket) => {
       results: calculateResults()
     });
 
-    // Broadcast updated results
-    const results = calculateResults();
-    io.emit('results_updated', {
-      results,
-      totalParticipants: gameState.students.size,
-      answered: Array.from(gameState.students.values()).filter(s => s.hasAnswered).length
-    });
+    // Broadcast updated results to everyone
+    broadcastResults();
+    
+    // Update teacher's student list
+    broadcastStudentUpdate();
 
     // Check if all students have answered
     const allAnswered = Array.from(gameState.students.values()).every(s => s.hasAnswered);
     if (allAnswered && gameState.students.size > 0) {
+      console.log('All students answered, ending poll');
       endPoll();
     }
 
@@ -290,6 +354,8 @@ io.on('connection', (socket) => {
     const student = gameState.students.get(studentId);
     
     if (student) {
+      console.log('Removing student:', student.name);
+      
       // Notify student they've been removed
       io.to(student.socketId).emit('kicked_out');
       
@@ -297,9 +363,21 @@ io.on('connection', (socket) => {
       gameState.students.delete(studentId);
       
       // Update teacher's student list
-      socket.emit('student_list_updated', {
-        students: Array.from(gameState.students.values())
-      });
+      broadcastStudentUpdate();
+      
+      // Update results if poll is active
+      if (gameState.isActive) {
+        broadcastResults();
+      }
+      
+      // Check if all remaining students have answered
+      if (gameState.isActive && gameState.students.size > 0) {
+        const allAnswered = Array.from(gameState.students.values()).every(s => s.hasAnswered);
+        if (allAnswered) {
+          console.log('All remaining students answered after removal, ending poll');
+          endPoll();
+        }
+      }
 
       console.log('Student removed:', student.name);
     }
@@ -327,10 +405,20 @@ io.on('connection', (socket) => {
       gameState.students.delete(socket.id);
       
       // Notify teacher
-      if (gameState.teacherSocketId) {
-        io.to(gameState.teacherSocketId).emit('student_list_updated', {
-          students: Array.from(gameState.students.values())
-        });
+      broadcastStudentUpdate();
+      
+      // Update results if poll is active
+      if (gameState.isActive) {
+        broadcastResults();
+        
+        // Check if all remaining students have answered
+        if (gameState.students.size > 0) {
+          const allAnswered = Array.from(gameState.students.values()).every(s => s.hasAnswered);
+          if (allAnswered) {
+            console.log('All remaining students answered after disconnect, ending poll');
+            endPoll();
+          }
+        }
       }
       
       console.log('Student disconnected:', student.name);
@@ -346,7 +434,28 @@ io.on('connection', (socket) => {
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date() });
+  res.json({ 
+    status: 'OK', 
+    timestamp: new Date(),
+    gameState: {
+      hasCurrentPoll: !!gameState.currentPoll,
+      isActive: gameState.isActive,
+      studentsCount: gameState.students.size,
+      timeLeft: gameState.timeLeft
+    }
+  });
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully');
+  if (gameState.timer) {
+    clearInterval(gameState.timer);
+  }
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
 });
 
 const PORT = process.env.PORT || 5000;
