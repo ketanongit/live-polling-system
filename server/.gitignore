@@ -1,0 +1,6 @@
+# Environment
+.env
+
+# Ignore node modules (explicit, including nested)
+node_modules/
+**/node_modules/
