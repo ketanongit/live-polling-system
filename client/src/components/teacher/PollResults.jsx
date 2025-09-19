@@ -30,7 +30,7 @@ const PollResults = () => {
           )}
         </div>
         
-        <div className="bg-gray-medium text-white p-4 rounded-lg mb-6">
+        <div className="bg-gray-500 text-white p-4 rounded-lg mb-6">
           <p className="font-medium">{currentPoll.question}</p>
         </div>
 

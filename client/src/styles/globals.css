@@ -5,3 +5,41 @@ body {
   margin: 0;
   padding: 0;
 }
+
+/* Custom utility classes */
+.card {
+  @apply bg-white rounded-lg shadow-sm border border-gray-200 p-6;
+}
+
+.progress-bar {
+  @apply w-full bg-gray-200 rounded-full overflow-hidden;
+}
+
+.progress-fill {
+  @apply h-full bg-purple-600 transition-all duration-300 ease-out;
+}
+
+/* Primary color utilities */
+.primary {
+  @apply bg-purple-600;
+}
+
+.text-primary {
+  @apply text-purple-600;
+}
+
+.bg-primary {
+  @apply bg-purple-600;
+}
+
+.text-primary-dark {
+  @apply text-purple-700;
+}
+
+.focus\:ring-primary:focus {
+  @apply ring-purple-500;
+}
+
+.border-primary {
+  @apply border-purple-600;
+}

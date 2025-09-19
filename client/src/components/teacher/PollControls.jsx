@@ -79,10 +79,10 @@ const PollControls = () => {
       <h3 className="text-lg font-semibold text-gray-900 mb-4">Poll Controls</h3>
       
       <div className="space-y-4">
-        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+        {/* <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
           <span className="text-gray-600">Active Students:</span>
           <span className="font-semibold text-gray-900">{students.length}</span>
-        </div>
+        </div> */}
         
         {currentPoll && (
           <>

@@ -6,7 +6,7 @@ const TeacherDashboard = () => {
   return (
     <div className="space-y-6">
       <PollControls />
-      <ParticipantsList />
+      {/* <ParticipantsList /> */}
     </div>
   )
 }

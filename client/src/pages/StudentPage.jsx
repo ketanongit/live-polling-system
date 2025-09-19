@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { USER_ROLES, SOCKET_EVENTS } from '../utils/constants'
@@ -16,19 +16,29 @@ const StudentPage = () => {
   const socketConnection = useSocket()
   const dispatch = useDispatch()
 
+  const [hasJoined, setHasJoined] = useState(false)
+
   useEffect(() => {
     // Redirect if not student
     if (role && role !== USER_ROLES.STUDENT) {
       navigate('/')
       return
     }
+  }, [role, navigate])
 
-    // Join as student when connected and name is set
-    if (socket && isConnected && name && !name.includes('joined')) {
+  useEffect(() => {
+    // Join as student when connected and name is set, but only once
+    if (socket && isConnected && name && !hasJoined) {
       console.log('Joining as student:', name)
       socket.emit(SOCKET_EVENTS.JOIN_AS_STUDENT, { name })
+      setHasJoined(true)
     }
-  }, [role, navigate, socket, isConnected, name])
+    
+    // Reset hasJoined when socket disconnects
+    if (!isConnected) {
+      setHasJoined(false)
+    }
+  }, [socket, isConnected, name, hasJoined])
 
   if (!isConnected) {
     return (

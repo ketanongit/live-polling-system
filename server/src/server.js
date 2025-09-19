@@ -210,13 +210,24 @@ io.on('connection', (socket) => {
     socket.join('students');
     
     // Send current poll state to student (including active polls)
-    socket.emit('student_joined', {
+    const currentResults = calculateResults();
+    const studentData = {
       currentPoll: gameState.currentPoll,
       isActive: gameState.isActive,
       timeLeft: gameState.timeLeft,
       hasAnswered: false,
-      results: gameState.isActive ? [] : calculateResults() // Only show results if poll ended
+      results: currentResults, // Always send current results
+      totalParticipants: gameState.students.size
+    };
+    
+    console.log('Sending student data:', {
+      hasCurrentPoll: !!gameState.currentPoll,
+      isActive: gameState.isActive,
+      resultsCount: currentResults.length,
+      totalParticipants: gameState.students.size
     });
+    
+    socket.emit('student_joined', studentData);
 
     // Notify teacher about new student
     broadcastStudentUpdate();
@@ -226,7 +237,7 @@ io.on('connection', (socket) => {
       broadcastResults();
     }
 
-    console.log('Student joined:', name, 'Active poll:', !!gameState.currentPoll);
+    console.log('Student joined:', name, 'Active poll:', !!gameState.currentPoll, 'IsActive:', gameState.isActive);
   });
 
   // Teacher creates a poll
@@ -284,6 +295,9 @@ io.on('connection', (socket) => {
       poll: gameState.currentPoll,
       timeLeft: gameState.timeLeft
     });
+
+    // Send initial results (all zeros) to everyone
+    broadcastResults();
 
     // Update teacher with student list
     broadcastStudentUpdate();
@@ -458,7 +472,7 @@ process.on('SIGTERM', () => {
   });
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

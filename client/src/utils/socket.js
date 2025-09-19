@@ -8,15 +8,15 @@ class SocketManager {
   }
 
   connect() {
-    if (!this.socket) {
+    if (!this.socket || this.socket.disconnected) {
       console.log('Connecting to:', SOCKET_URL);
       this.socket = io(SOCKET_URL, {
         autoConnect: true,
         reconnection: true,
         reconnectionDelay: 1000,
-        reconnectionAttempts: 5,
-        maxReconnectionAttempts: 5,
-        timeout: 10000,
+        reconnectionAttempts: 10,
+        maxReconnectionAttempts: 10,
+        timeout: 20000,
         transports: ['websocket', 'polling']
       });
 

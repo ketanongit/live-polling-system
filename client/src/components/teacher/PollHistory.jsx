@@ -25,7 +25,7 @@ const PollHistory = ({ onClose }) => {
                 <h4 className="font-semibold text-gray-900 mb-2">
                   Question {pollIndex + 1}
                 </h4>
-                <div className="bg-gray-medium text-white p-3 rounded text-sm">
+                <div className="bg-gray-500 text-white p-3 rounded text-sm">
                   {poll.question}
                 </div>
               </div>

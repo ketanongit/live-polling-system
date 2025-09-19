@@ -14,8 +14,20 @@ const StudentDashboard = () => {
     hasAnswered, 
     status, 
     timeLeft,
-    pollQuestion: currentPoll?.question 
+    pollQuestion: currentPoll?.question,
+    optionsCount: currentPoll?.options?.length
   })
+  
+  // Debug what component will be rendered
+  if (!currentPoll) {
+    console.log('🔄 Rendering WaitingScreen - no current poll')
+  } else if (status === POLL_STATUS.ENDED || hasAnswered || timeLeft <= 0) {
+    console.log('📊 Rendering StudentResults - poll ended or answered')
+  } else if (status === POLL_STATUS.ACTIVE && !hasAnswered && timeLeft > 0) {
+    console.log('✏️ Rendering AnswerPoll - active poll, not answered')
+  } else {
+    console.log('🔄 Rendering WaitingScreen - fallback')
+  }
 
   // No poll exists - show waiting screen
   if (!currentPoll) {

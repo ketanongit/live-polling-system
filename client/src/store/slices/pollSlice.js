@@ -39,10 +39,12 @@ const pollSlice = createSlice({
     setPoll: (state, action) => {
       state.currentPoll = action.payload
       if (action.payload) {
+        // New poll - reset all answer state
         state.status = POLL_STATUS.ACTIVE
         state.hasAnswered = false
         state.selectedOption = null
         state.results = [] // Clear previous results when new poll starts
+        console.log('✅ Poll set - reset answer state for new poll')
       } else {
         state.status = POLL_STATUS.WAITING
         state.hasAnswered = false
@@ -81,6 +83,11 @@ const pollSlice = createSlice({
     setAnswered: (state, action) => {
       state.hasAnswered = true
       state.selectedOption = action.payload
+    },
+    
+    resetAnsweredState: (state) => {
+      state.hasAnswered = false
+      state.selectedOption = null
     },
     
     // Students management
@@ -177,6 +184,7 @@ export const {
   setTimeLeft,
   setResults,
   setAnswered,
+  resetAnsweredState,
   setStudents,
   addStudent,
   removeStudent,

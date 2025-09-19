@@ -13,10 +13,14 @@ import {
   endPoll,
   setPollHistory,
   setError as setPollError,
-  setStatus
+  setStatus,
+  resetAnsweredState
 } from '../store/slices/pollSlice'
 import { addMessage } from '../store/slices/chatSlice'
 import { POLL_STATUS } from '../utils/constants'
+
+// Global flag to prevent multiple listener setups
+let listenersSetup = false
 
 export const useSocket = () => {
   const dispatch = useDispatch()
@@ -24,6 +28,20 @@ export const useSocket = () => {
   useEffect(() => {
     const socket = socketManager.connect()
     dispatch(setSocket(socket))
+    
+    // Add a flag to prevent duplicate listeners
+    if (listenersSetup) {
+      console.log('🔄 Socket listeners already added globally, skipping setup')
+      return
+    }
+    
+    console.log('🎯 Setting up socket event listeners for the first time')
+    listenersSetup = true
+
+    // Test that event listeners are working
+    socket.on('test_event', (data) => {
+      console.log('🧪 TEST EVENT RECEIVED:', data)
+    })
 
     // Connection events
     socket.on('connect', () => {
@@ -80,11 +98,25 @@ export const useSocket = () => {
         hasPoll: !!data.currentPoll,
         isActive: data.isActive,
         timeLeft: data.timeLeft,
-        pollQuestion: data.currentPoll?.question
+        pollQuestion: data.currentPoll?.question,
+        resultsCount: data.results?.length || 0,
+        totalParticipants: data.totalParticipants
       })
       
       dispatch(setPoll(data.currentPoll))
       dispatch(setTimeLeft(data.timeLeft || 60))
+      
+      // Always set results and total participants if available
+      if (data.results) {
+        dispatch(setResults(data.results))
+      }
+      
+      if (data.totalParticipants !== undefined) {
+        dispatch(updateAnsweredCount({
+          answered: 0, // Will be updated by next results update
+          totalParticipants: data.totalParticipants
+        }))
+      }
       
       if (data.currentPoll && data.isActive) {
         console.log('📚 Setting student status to ACTIVE with timeLeft:', data.timeLeft)
@@ -92,10 +124,6 @@ export const useSocket = () => {
       } else if (data.currentPoll) {
         console.log('📊 Setting student status to ENDED')
         dispatch(setStatus(POLL_STATUS.ENDED))
-        // If poll ended, show results
-        if (data.results) {
-          dispatch(setResults(data.results))
-        }
       } else {
         console.log('⏳ Setting student status to WAITING')
         dispatch(setStatus(POLL_STATUS.WAITING))
@@ -104,16 +132,21 @@ export const useSocket = () => {
 
     // Poll events
     socket.on(SOCKET_EVENTS.POLL_CREATED, (data) => {
-      console.log('🆕 Poll created event received:', {
+      console.log('🆕🆕🆕 POLL CREATED EVENT RECEIVED 🆕🆕🆕:', {
         question: data.poll?.question,
         timeLeft: data.timeLeft,
-        optionsCount: data.poll?.options?.length
+        optionsCount: data.poll?.options?.length,
+        socketId: socket.id
       })
       
+      // Reset all state for new poll
+      dispatch(resetAnsweredState()) // Reset first
       dispatch(setPoll(data.poll))
       dispatch(setTimeLeft(data.timeLeft))
       dispatch(setStatus(POLL_STATUS.ACTIVE))
       dispatch(setResults([])) // Clear previous results
+      
+      console.log('✅ Poll state updated after poll_created event')
     })
 
     socket.on(SOCKET_EVENTS.POLL_ENDED, (data) => {
@@ -141,7 +174,7 @@ export const useSocket = () => {
     })
 
     socket.on(SOCKET_EVENTS.TIMER_UPDATE, (data) => {
-      console.log('⏰ Timer update received:', data.timeLeft)
+      console.log('⏰⏰⏰ TIMER UPDATE RECEIVED:', data.timeLeft, 'socketId:', socket.id)
       dispatch(setTimeLeft(data.timeLeft))
       
       // Update status based on timer
@@ -171,26 +204,12 @@ export const useSocket = () => {
       dispatch(addMessage(data))
     })
 
-    // Cleanup function
+    // Cleanup function - only clean up on unmount, not on re-renders
     return () => {
-      console.log('🧹 Cleaning up socket listeners')
-      // Remove all listeners but keep connection alive
-      socket.off('connect')
-      socket.off('disconnect')
-      socket.off('connect_error')
-      socket.off(SOCKET_EVENTS.ERROR)
-      socket.off(SOCKET_EVENTS.TEACHER_JOINED)
-      socket.off(SOCKET_EVENTS.STUDENT_JOINED)
-      socket.off(SOCKET_EVENTS.POLL_CREATED)
-      socket.off(SOCKET_EVENTS.POLL_ENDED)
-      socket.off(SOCKET_EVENTS.RESULTS_UPDATED)
-      socket.off(SOCKET_EVENTS.TIMER_UPDATE)
-      socket.off(SOCKET_EVENTS.STUDENT_LIST_UPDATED)
-      socket.off(SOCKET_EVENTS.POLL_HISTORY)
-      socket.off(SOCKET_EVENTS.KICKED_OUT)
-      socket.off('message_received')
+      console.log('🧹 Component unmounting - preserving socket listeners')
+      // Don't clean up listeners to preserve socket connection across re-renders
     }
-  }, [dispatch])
+  }, [dispatch])  // Include dispatch but prevent re-setup with global flag
 
   return socketManager.getSocket()
 }
