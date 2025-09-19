@@ -35,7 +35,7 @@ const gameState = {
 };
 
 // Helper functions
-function calculateResults() {
+function calculateResults(includeCorrectAnswers = false) {
   const totalAnswers = Array.from(gameState.results.values()).reduce((sum, count) => sum + count, 0);
   const resultsArray = [];
   
@@ -43,14 +43,20 @@ function calculateResults() {
     gameState.currentPoll.options.forEach((option, index) => {
       const count = gameState.results.get(index) || 0;
       const percentage = totalAnswers > 0 ? Math.round((count / totalAnswers) * 100) : 0;
-      const isCorrect = gameState.currentPoll.correctAnswers && 
-                       gameState.currentPoll.correctAnswers[index] === true;
-      resultsArray.push({
+      
+      const result = {
         option,
         count,
-        percentage,
-        isCorrect
-      });
+        percentage
+      };
+      
+      // Only include correct answer information if explicitly requested (when poll ends)
+      if (includeCorrectAnswers) {
+        result.isCorrect = gameState.currentPoll.correctAnswers && 
+                          gameState.currentPoll.correctAnswers[index] === true;
+      }
+      
+      resultsArray.push(result);
     });
   }
   
@@ -80,8 +86,8 @@ function endPoll() {
   if (gameState.currentPoll) {
     console.log('Ending poll:', gameState.currentPoll.question);
     
-    // Save to history
-    const finalResults = calculateResults();
+    // Save to history with correct answers revealed
+    const finalResults = calculateResults(true); // Include correct answers
     gameState.pollHistory.unshift({
       id: Date.now(),
       question: gameState.currentPoll.question,
@@ -108,7 +114,7 @@ function endPoll() {
       student.selectedOption = null;
     });
     
-    // Notify all clients
+    // Notify all clients with correct answers revealed
     io.emit('poll_ended', {
       results: finalResults,
       totalParticipants: gameState.students.size
@@ -150,11 +156,17 @@ function startTimer(duration) {
 }
 
 function canCreateNewPoll() {
-  // Can create if no active poll OR all students have answered
-  if (!gameState.currentPoll || !gameState.isActive) {
+  // Can create if no current poll
+  if (!gameState.currentPoll) {
     return true;
   }
   
+  // Can create if poll is not active (ended)
+  if (!gameState.isActive) {
+    return true;
+  }
+  
+  // Can create if all students have answered (but poll is still active)
   const allStudentsAnswered = gameState.students.size > 0 && 
     Array.from(gameState.students.values()).every(s => s.hasAnswered);
   
@@ -245,6 +257,39 @@ io.on('connection', (socket) => {
     console.log('Student joined:', name, 'Active poll:', !!gameState.currentPoll, 'IsActive:', gameState.isActive);
   });
 
+  // Teacher clears current poll
+  socket.on('clear_poll', () => {
+    if (socket.id !== gameState.teacherSocketId) {
+      socket.emit('error', { message: 'Unauthorized' });
+      return;
+    }
+
+    console.log('Teacher requested to clear poll');
+    
+    // Clear current poll
+    gameState.currentPoll = null;
+    gameState.isActive = false;
+    gameState.timeLeft = 0;
+    gameState.results.clear();
+    
+    // Clear timer
+    if (gameState.timer) {
+      clearInterval(gameState.timer);
+      gameState.timer = null;
+    }
+    
+    // Reset student answered status
+    gameState.students.forEach(student => {
+      student.hasAnswered = false;
+      student.selectedOption = null;
+    });
+    
+    // Notify all clients that poll is cleared
+    io.emit('poll_cleared');
+    
+    console.log('Poll cleared successfully');
+  });
+
   // Teacher creates a poll
   socket.on('create_poll', (data) => {
     if (socket.id !== gameState.teacherSocketId) {
@@ -260,7 +305,14 @@ io.on('connection', (socket) => {
     }
 
     // Check if can start new poll
-    if (!canCreateNewPoll()) {
+    const canCreate = canCreateNewPoll();
+    console.log('Can create new poll:', canCreate, {
+      hasCurrentPoll: !!gameState.currentPoll,
+      isActive: gameState.isActive,
+      studentsCount: gameState.students.size
+    });
+    
+    if (!canCreate) {
       socket.emit('error', { message: 'Cannot create new poll until all students answer current poll' });
       return;
     }
@@ -360,11 +412,10 @@ io.on('connection', (socket) => {
     // Update teacher's student list
     broadcastStudentUpdate();
 
-    // Check if all students have answered
+    // Don't end poll when all students answer - let timer run its course
     const allAnswered = Array.from(gameState.students.values()).every(s => s.hasAnswered);
     if (allAnswered && gameState.students.size > 0) {
-      console.log('All students answered, ending poll');
-      endPoll();
+      console.log('All students answered, but poll continues until timer expires');
     }
 
     console.log('Answer submitted by:', student.name, 'Option:', optionIndex);
@@ -397,12 +448,11 @@ io.on('connection', (socket) => {
         broadcastResults();
       }
       
-      // Check if all remaining students have answered
+      // Don't end poll when all remaining students have answered - let timer run its course
       if (gameState.isActive && gameState.students.size > 0) {
         const allAnswered = Array.from(gameState.students.values()).every(s => s.hasAnswered);
         if (allAnswered) {
-          console.log('All remaining students answered after removal, ending poll');
-          endPoll();
+          console.log('All remaining students answered after removal, but poll continues until timer expires');
         }
       }
 
@@ -438,12 +488,11 @@ io.on('connection', (socket) => {
       if (gameState.isActive) {
         broadcastResults();
         
-        // Check if all remaining students have answered
+        // Don't end poll when all remaining students have answered - let timer run its course
         if (gameState.students.size > 0) {
           const allAnswered = Array.from(gameState.students.values()).every(s => s.hasAnswered);
           if (allAnswered) {
-            console.log('All remaining students answered after disconnect, ending poll');
-            endPoll();
+            console.log('All remaining students answered after disconnect, but poll continues until timer expires');
           }
         }
       }

@@ -15,7 +15,8 @@ import {
   setError as setPollError,
   setStatus,
   resetAnsweredState,
-  setAnswered
+  setAnswered,
+  clearPoll
 } from '../store/slices/pollSlice'
 import { addMessage } from '../store/slices/chatSlice'
 import { POLL_STATUS } from '../utils/constants'
@@ -158,6 +159,11 @@ export const useSocket = () => {
       
       dispatch(endPoll(data))
       dispatch(setStatus(POLL_STATUS.ENDED))
+    })
+
+    socket.on(SOCKET_EVENTS.POLL_CLEARED, () => {
+      console.log('🧹 Poll cleared event received')
+      dispatch(clearPoll())
     })
 
     socket.on(SOCKET_EVENTS.RESULTS_UPDATED, (data) => {

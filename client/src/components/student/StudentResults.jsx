@@ -79,12 +79,16 @@ const StudentResults = () => {
                     className={`
                       p-4 rounded-lg border-2 transition-all duration-300
                       ${isSelected 
-                        ? isCorrect 
-                          ? 'border-green-600 bg-green-50' 
-                          : 'border-red-600 bg-red-50'
-                        : isCorrect 
-                          ? 'border-green-300 bg-green-25' 
-                          : 'border-gray-200'
+                        ? showTimer
+                          ? 'border-blue-600 bg-blue-50'
+                          : isCorrect 
+                            ? 'border-green-600 bg-green-50' 
+                            : 'border-red-600 bg-red-50'
+                        : showTimer
+                          ? 'border-gray-200'
+                          : isCorrect 
+                            ? 'border-green-300 bg-green-25' 
+                            : 'border-gray-200'
                       }
                     `}
                   >
@@ -93,16 +97,21 @@ const StudentResults = () => {
                         <span className="font-medium text-gray-900">
                           {result.option}
                         </span>
-                        {isCorrect && (
+                        {!showTimer && isCorrect && (
                           <span className="text-green-600 font-semibold text-sm">
                             ✓ Correct
                           </span>
                         )}
                         {isSelected && (
                           <span className={`ml-2 text-sm font-semibold ${
-                            isCorrect ? 'text-green-700' : 'text-red-700'
+                            showTimer 
+                              ? 'text-blue-700' 
+                              : isCorrect ? 'text-green-700' : 'text-red-700'
                           }`}>
-                            {isCorrect ? '✓ Your Answer (Correct!)' : '✗ Your Answer (Incorrect)'}
+                            {showTimer 
+                              ? '✓ Your Answer' 
+                              : isCorrect ? '✓ Your Answer (Correct!)' : '✗ Your Answer (Incorrect)'
+                            }
                           </span>
                         )}
                       </div>
@@ -113,7 +122,9 @@ const StudentResults = () => {
                     <div className="progress-bar h-3">
                       <div 
                         className={`progress-fill transition-all duration-500 ease-out ${
-                          isCorrect ? 'bg-green-500' : 'bg-gray-400'
+                          showTimer 
+                            ? 'bg-purple-500' 
+                            : isCorrect ? 'bg-green-500' : 'bg-gray-400'
                         }`}
                         style={{ width: `${result.percentage}%` }}
                       />
@@ -151,21 +162,32 @@ const StudentResults = () => {
             </div>
           ) : selectedOption !== null && isAnswerCorrect !== null ? (
             <div className={`border rounded-lg p-4 ${
-              isAnswerCorrect 
-                ? 'bg-green-50 border-green-200' 
-                : 'bg-red-50 border-red-200'
+              showTimer
+                ? 'bg-blue-50 border-blue-200'
+                : isAnswerCorrect 
+                  ? 'bg-green-50 border-green-200' 
+                  : 'bg-red-50 border-red-200'
             }`}>
               <div className={`text-lg font-semibold ${
-                isAnswerCorrect ? 'text-green-700' : 'text-red-700'
+                showTimer
+                  ? 'text-blue-700'
+                  : isAnswerCorrect ? 'text-green-700' : 'text-red-700'
               }`}>
-                {isAnswerCorrect ? '🎉 Correct Answer!' : '❌ Incorrect Answer'}
+                {showTimer 
+                  ? '✅ Answer Submitted!' 
+                  : isAnswerCorrect ? '🎉 Correct Answer!' : '❌ Incorrect Answer'
+                }
               </div>
               <p className={`text-sm mt-1 ${
-                isAnswerCorrect ? 'text-green-600' : 'text-red-600'
+                showTimer
+                  ? 'text-blue-600'
+                  : isAnswerCorrect ? 'text-green-600' : 'text-red-600'
               }`}>
-                {isAnswerCorrect 
-                  ? 'Great job! You selected the correct answer.' 
-                  : 'Better luck next time! Check the correct answers above.'
+                {showTimer 
+                  ? 'Your answer has been recorded. Wait for the poll to end to see if you got it right!'
+                  : isAnswerCorrect 
+                    ? 'Great job! You selected the correct answer.' 
+                    : 'Better luck next time! Check the correct answers above.'
                 }
               </p>
             </div>

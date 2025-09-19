@@ -14,6 +14,9 @@ const PollControls = () => {
 
   const handleNewQuestion = () => {
     if (socket) {
+      // Notify server to clear poll
+      socket.emit(SOCKET_EVENTS.CLEAR_POLL)
+      // Also clear client state
       dispatch(clearPoll())
     }
   }
