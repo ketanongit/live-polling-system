@@ -34,11 +34,10 @@ export const useSocket = () => {
     // Add a flag to prevent duplicate listeners
     if (listenersSetup) {
       console.log('🔄 Socket listeners already added globally, skipping setup')
-      return
+    } else {
+      console.log('🎯 Setting up socket event listeners for the first time')
+      listenersSetup = true
     }
-    
-    console.log('🎯 Setting up socket event listeners for the first time')
-    listenersSetup = true
 
     // Test that event listeners are working
     socket.on('test_event', (data) => {
@@ -49,7 +48,7 @@ export const useSocket = () => {
     socket.on('connect', () => {
       dispatch(setConnected(true))
       dispatch(setError(null)) // Clear any connection errors
-      console.log('✅ Connected to server successfully')
+      console.log('✅ Connected to server successfully, socket ID:', socket.id)
     })
 
     socket.on('disconnect', () => {
@@ -72,12 +71,7 @@ export const useSocket = () => {
 
     // Teacher events
     socket.on(SOCKET_EVENTS.TEACHER_JOINED, (data) => {
-      console.log('🎓 Teacher joined event received:', {
-        hasPoll: !!data.currentPoll,
-        studentsCount: data.students?.length || 0,
-        isActive: data.isActive,
-        timeLeft: data.timeLeft
-      })
+      console.log('🎓 Teacher joined - students:', data.students?.length || 0)
       
       dispatch(setPoll(data.currentPoll))
       dispatch(setStudents(data.students || []))
@@ -191,8 +185,11 @@ export const useSocket = () => {
       }
     })
 
+    // Student list updates - always set up
+    console.log('👥 Setting up student list updated listener')
     socket.on(SOCKET_EVENTS.STUDENT_LIST_UPDATED, (data) => {
       console.log('👥 Student list updated:', data.students?.length || 0, 'students')
+      console.log('👥 Student list updated - students data:', data.students)
       dispatch(setStudents(data.students || []))
     })
 

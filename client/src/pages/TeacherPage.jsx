@@ -12,23 +12,37 @@ import LoadingSpinner from '../components/common/LoadingSpinner'
 
 const TeacherPage = () => {
   const { role, isConnected } = useSelector(state => state.auth)
-  const { currentPoll, status } = useSelector(state => state.poll)
+  const { currentPoll, status, students } = useSelector(state => state.poll)
   const navigate = useNavigate()
   const dispatch = useDispatch()
   const socket = useSocket()
 
+
   useEffect(() => {
+    console.log('🎓 TeacherPage useEffect - role:', role, 'socket:', !!socket, 'isConnected:', isConnected)
+    
+    // Set teacher role if not set (for direct navigation to /teacher)
+    if (!role) {
+      console.log('🎓 TeacherPage: Setting teacher role')
+      dispatch({ type: 'auth/setRole', payload: USER_ROLES.TEACHER })
+      return
+    }
+    
     // Redirect if not teacher
-    if (role && role !== USER_ROLES.TEACHER) {
+    if (role !== USER_ROLES.TEACHER) {
+      console.log('🎓 TeacherPage: Redirecting - not teacher role')
       navigate('/')
       return
     }
 
     // Join as teacher when connected
     if (socket && isConnected) {
+      console.log('🎓 TeacherPage: Emitting JOIN_AS_TEACHER, socket ID:', socket.id)
       socket.emit(SOCKET_EVENTS.JOIN_AS_TEACHER)
+    } else {
+      console.log('🎓 TeacherPage: Not connected yet', { socket: !!socket, isConnected })
     }
-  }, [role, socket, isConnected, navigate])
+  }, [role, socket, isConnected, navigate, dispatch])
 
   if (!isConnected) {
     return (
@@ -48,7 +62,14 @@ const TeacherPage = () => {
       
       <div className="max-w-7xl mx-auto px-4 py-6">
         {!currentPoll ? (
-          <CreatePoll />
+          <div className="grid lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <CreatePoll />
+            </div>
+            <div>
+              <TeacherDashboard />
+            </div>
+          </div>
         ) : (
           <div className="grid lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
