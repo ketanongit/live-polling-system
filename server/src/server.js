@@ -24,7 +24,7 @@ const io = socketIo(server, {
 // In-memory storage (for development)
 const gameState = {
   currentPoll: null,
-  students: new Map(), // studentId -> { name, socketId, hasAnswered }
+  students: new Map(), // studentId -> { name, socketId, hasAnswered, selectedOption }
   results: new Map(), // optionIndex -> count
   pollHistory: [],
   timer: null,
@@ -43,10 +43,13 @@ function calculateResults() {
     gameState.currentPoll.options.forEach((option, index) => {
       const count = gameState.results.get(index) || 0;
       const percentage = totalAnswers > 0 ? Math.round((count / totalAnswers) * 100) : 0;
+      const isCorrect = gameState.currentPoll.correctAnswers && 
+                       gameState.currentPoll.correctAnswers[index] === true;
       resultsArray.push({
         option,
         count,
-        percentage
+        percentage,
+        isCorrect
       });
     });
   }
@@ -102,6 +105,7 @@ function endPoll() {
     // Reset student answered status for next poll
     gameState.students.forEach(student => {
       student.hasAnswered = false;
+      student.selectedOption = null;
     });
     
     // Notify all clients
@@ -204,7 +208,8 @@ io.on('connection', (socket) => {
       id: studentId,
       name: name.trim(),
       socketId: socket.id,
-      hasAnswered: false
+      hasAnswered: false,
+      selectedOption: null
     });
 
     socket.join('students');
@@ -247,7 +252,7 @@ io.on('connection', (socket) => {
       return;
     }
 
-    const { question, options, timeLimit = 60 } = data;
+    const { question, options, correctAnswers, timeLimit = 60 } = data;
     
     if (!question || !options || options.length < 2) {
       socket.emit('error', { message: 'Question and at least 2 options are required' });
@@ -272,6 +277,7 @@ io.on('connection', (socket) => {
     gameState.currentPoll = {
       question: question.trim(),
       options: options.map(opt => opt.trim()),
+      correctAnswers: correctAnswers || options.map(() => false),
       timeLimit,
       createdAt: new Date()
     };
@@ -285,6 +291,7 @@ io.on('connection', (socket) => {
     // Reset student answered status
     gameState.students.forEach(student => {
       student.hasAnswered = false;
+      student.selectedOption = null;
     });
 
     // Start timer and set active
@@ -332,12 +339,18 @@ io.on('connection', (socket) => {
 
     // Record answer
     student.hasAnswered = true;
+    student.selectedOption = optionIndex;
     const currentCount = gameState.results.get(optionIndex) || 0;
     gameState.results.set(optionIndex, currentCount + 1);
+
+    // Check if answer is correct
+    const isCorrect = gameState.currentPoll.correctAnswers && 
+                     gameState.currentPoll.correctAnswers[optionIndex] === true;
 
     // Notify student of successful submission
     socket.emit('answer_submitted', {
       optionIndex,
+      isCorrect,
       results: calculateResults()
     });
 

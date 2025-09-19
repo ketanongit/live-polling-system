@@ -14,7 +14,8 @@ import {
   setPollHistory,
   setError as setPollError,
   setStatus,
-  resetAnsweredState
+  resetAnsweredState,
+  setAnswered
 } from '../store/slices/pollSlice'
 import { addMessage } from '../store/slices/chatSlice'
 import { POLL_STATUS } from '../utils/constants'
@@ -192,6 +193,20 @@ export const useSocket = () => {
     socket.on(SOCKET_EVENTS.POLL_HISTORY, (data) => {
       console.log('📚 Poll history received:', data.history?.length || 0, 'polls')
       dispatch(setPollHistory(data.history || []))
+    })
+
+    socket.on(SOCKET_EVENTS.ANSWER_SUBMITTED, (data) => {
+      console.log('✅ Answer submitted event received:', {
+        optionIndex: data.optionIndex,
+        isCorrect: data.isCorrect,
+        resultsCount: data.results?.length || 0
+      })
+      
+      dispatch(setAnswered({
+        optionIndex: data.optionIndex,
+        isCorrect: data.isCorrect
+      }))
+      dispatch(setResults(data.results || []))
     })
 
     socket.on(SOCKET_EVENTS.KICKED_OUT, () => {

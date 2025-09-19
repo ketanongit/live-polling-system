@@ -7,18 +7,21 @@ const CreatePoll = () => {
   const { socket } = useSelector(state => state.poll)
   const [question, setQuestion] = useState('')
   const [options, setOptions] = useState(['', ''])
+  const [correctAnswers, setCorrectAnswers] = useState([false, false])
   const [timeLimit, setTimeLimit] = useState(60)
   const [creating, setCreating] = useState(false)
 
   const handleAddOption = () => {
     if (options.length < 6) {
       setOptions([...options, ''])
+      setCorrectAnswers([...correctAnswers, false])
     }
   }
 
   const handleRemoveOption = (index) => {
     if (options.length > 2) {
       setOptions(options.filter((_, i) => i !== index))
+      setCorrectAnswers(correctAnswers.filter((_, i) => i !== index))
     }
   }
 
@@ -26,6 +29,12 @@ const CreatePoll = () => {
     const newOptions = [...options]
     newOptions[index] = value
     setOptions(newOptions)
+  }
+
+  const handleCorrectAnswerChange = (index, isCorrect) => {
+    const newCorrectAnswers = [...correctAnswers]
+    newCorrectAnswers[index] = isCorrect
+    setCorrectAnswers(newCorrectAnswers)
   }
 
   const handleSubmit = (e) => {
@@ -43,12 +52,14 @@ const CreatePoll = () => {
     socket.emit(SOCKET_EVENTS.CREATE_POLL, {
       question: question.trim(),
       options: validOptions.map(opt => opt.trim()),
+      correctAnswers: correctAnswers.slice(0, validOptions.length),
       timeLimit
     })
 
     // Reset form
     setQuestion('')
     setOptions(['', ''])
+    setCorrectAnswers([false, false])
     setTimeLimit(60)
     setCreating(false)
   }
@@ -107,9 +118,14 @@ const CreatePoll = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-4">
-              Edit Options
-            </label>
+            <div className="flex items-center justify-between mb-4">
+              <label className="block text-sm font-medium text-gray-700">
+                Edit Options
+              </label>
+              <label className="block text-sm font-medium text-gray-700">
+                Is it Correct?
+              </label>
+            </div>
             <div className="space-y-3">
               {options.map((option, index) => (
                 <div key={index} className="flex items-center space-x-3">
@@ -124,6 +140,28 @@ const CreatePoll = () => {
                     className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                     maxLength={100}
                   />
+                  <div className="flex items-center space-x-2">
+                    <label className="flex items-center space-x-1">
+                      <input
+                        type="radio"
+                        name={`correct-${index}`}
+                        checked={correctAnswers[index] === true}
+                        onChange={() => handleCorrectAnswerChange(index, true)}
+                        className="w-4 h-4 text-primary focus:ring-primary border-gray-300"
+                      />
+                      <span className="text-sm text-gray-700">Yes</span>
+                    </label>
+                    <label className="flex items-center space-x-1">
+                      <input
+                        type="radio"
+                        name={`correct-${index}`}
+                        checked={correctAnswers[index] === false}
+                        onChange={() => handleCorrectAnswerChange(index, false)}
+                        className="w-4 h-4 text-primary focus:ring-primary border-gray-300"
+                      />
+                      <span className="text-sm text-gray-700">No</span>
+                    </label>
+                  </div>
                   {options.length > 2 && (
                     <button
                       type="button"

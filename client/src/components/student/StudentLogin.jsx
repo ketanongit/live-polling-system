@@ -62,7 +62,7 @@ const StudentLogin = () => {
                 id="name"
                 value={inputName}
                 onChange={(e) => setInputName(e.target.value)}
-                placeholder="Rahul Bajaj"
+                placeholder="Enter your name"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-gray-50"
                 maxLength={50}
               />

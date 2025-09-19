@@ -9,6 +9,7 @@ const initialState = {
   results: [],
   hasAnswered: false,
   selectedOption: null,
+  isAnswerCorrect: null,
   
   // Students (for teacher)
   students: [],
@@ -43,12 +44,14 @@ const pollSlice = createSlice({
         state.status = POLL_STATUS.ACTIVE
         state.hasAnswered = false
         state.selectedOption = null
+        state.isAnswerCorrect = null
         state.results = [] // Clear previous results when new poll starts
         console.log('✅ Poll set - reset answer state for new poll')
       } else {
         state.status = POLL_STATUS.WAITING
         state.hasAnswered = false
         state.selectedOption = null
+        state.isAnswerCorrect = null
         state.results = []
       }
     },
@@ -58,6 +61,7 @@ const pollSlice = createSlice({
       state.status = POLL_STATUS.WAITING
       state.hasAnswered = false
       state.selectedOption = null
+      state.isAnswerCorrect = null
       state.results = []
       state.timeLeft = 60
     },
@@ -82,12 +86,14 @@ const pollSlice = createSlice({
     
     setAnswered: (state, action) => {
       state.hasAnswered = true
-      state.selectedOption = action.payload
+      state.selectedOption = action.payload.optionIndex
+      state.isAnswerCorrect = action.payload.isCorrect
     },
     
     resetAnsweredState: (state) => {
       state.hasAnswered = false
       state.selectedOption = null
+      state.isAnswerCorrect = null
     },
     
     // Students management

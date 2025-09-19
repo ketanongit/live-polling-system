@@ -40,7 +40,10 @@ const AnswerPoll = () => {
     // Listen for confirmation
     const handleAnswerSubmitted = (data) => {
       console.log('Answer submitted successfully:', data)
-      dispatch(setAnswered(selectedOption))
+      dispatch(setAnswered({
+        optionIndex: data.optionIndex,
+        isCorrect: data.isCorrect
+      }))
       setSubmitting(false)
       socket.off(SOCKET_EVENTS.ANSWER_SUBMITTED, handleAnswerSubmitted)
       socket.off(SOCKET_EVENTS.ERROR, handleError)

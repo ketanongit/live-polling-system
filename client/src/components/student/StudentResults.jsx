@@ -3,7 +3,7 @@ import { useSelector } from 'react-redux'
 import { POLL_STATUS } from '../../utils/constants'
 
 const StudentResults = () => {
-  const { currentPoll, results, selectedOption, totalParticipants, timeLeft, status } = useSelector(state => state.poll)
+  const { currentPoll, results, selectedOption, isAnswerCorrect, totalParticipants, timeLeft, status } = useSelector(state => state.poll)
 
   if (!currentPoll) {
     return (
@@ -72,30 +72,49 @@ const StudentResults = () => {
             {results && results.length > 0 ? (
               results.map((result, index) => {
                 const isSelected = selectedOption === index
+                const isCorrect = result.isCorrect
                 return (
                   <div
                     key={index}
                     className={`
                       p-4 rounded-lg border-2 transition-all duration-300
-                      ${isSelected ? 'border-purple-600 bg-purple-50' : 'border-gray-200'}
+                      ${isSelected 
+                        ? isCorrect 
+                          ? 'border-green-600 bg-green-50' 
+                          : 'border-red-600 bg-red-50'
+                        : isCorrect 
+                          ? 'border-green-300 bg-green-25' 
+                          : 'border-gray-200'
+                      }
                     `}
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium text-gray-900">
-                        {result.option}
-                        {isSelected && (
-                          <span className="ml-2 text-sm text-purple-600 font-semibold">
-                            ✓ Your Answer
+                      <div className="flex items-center space-x-2">
+                        <span className="font-medium text-gray-900">
+                          {result.option}
+                        </span>
+                        {isCorrect && (
+                          <span className="text-green-600 font-semibold text-sm">
+                            ✓ Correct
                           </span>
                         )}
-                      </span>
+                        {isSelected && (
+                          <span className={`ml-2 text-sm font-semibold ${
+                            isCorrect ? 'text-green-700' : 'text-red-700'
+                          }`}>
+                            {isCorrect ? '✓ Your Answer (Correct!)' : '✗ Your Answer (Incorrect)'}
+                          </span>
+                        )}
+                      </div>
                       <span className="font-bold text-gray-900">
                         {result.percentage}%
                       </span>
                     </div>
                     <div className="progress-bar h-3">
                       <div 
-                        className="progress-fill transition-all duration-500 ease-out"
+                        className={`progress-fill transition-all duration-500 ease-out ${
+                          isCorrect ? 'bg-green-500' : 'bg-gray-400'
+                        }`}
                         style={{ width: `${result.percentage}%` }}
                       />
                     </div>
@@ -128,6 +147,26 @@ const StudentResults = () => {
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
               <p className="text-yellow-700 font-medium">
                 ⏳ Poll is still active - results are updating in real-time
+              </p>
+            </div>
+          ) : selectedOption !== null && isAnswerCorrect !== null ? (
+            <div className={`border rounded-lg p-4 ${
+              isAnswerCorrect 
+                ? 'bg-green-50 border-green-200' 
+                : 'bg-red-50 border-red-200'
+            }`}>
+              <div className={`text-lg font-semibold ${
+                isAnswerCorrect ? 'text-green-700' : 'text-red-700'
+              }`}>
+                {isAnswerCorrect ? '🎉 Correct Answer!' : '❌ Incorrect Answer'}
+              </div>
+              <p className={`text-sm mt-1 ${
+                isAnswerCorrect ? 'text-green-600' : 'text-red-600'
+              }`}>
+                {isAnswerCorrect 
+                  ? 'Great job! You selected the correct answer.' 
+                  : 'Better luck next time! Check the correct answers above.'
+                }
               </p>
             </div>
           ) : (
