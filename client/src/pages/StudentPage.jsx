@@ -3,8 +3,6 @@ import { useSelector, useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { USER_ROLES, SOCKET_EVENTS } from '../utils/constants'
 import { useSocket } from '../hooks/useSocket'
-import Header from '../components/common/Header'
-import Timer from '../components/common/Timer'
 import StudentLogin from '../components/student/StudentLogin'
 import StudentDashboard from '../components/student/StudentDashboard'
 import LoadingSpinner from '../components/common/LoadingSpinner'
@@ -53,9 +51,6 @@ const StudentPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
-      <Timer />
-      
       <div className="max-w-4xl mx-auto px-4 py-6">
         {!name ? (
           <StudentLogin />

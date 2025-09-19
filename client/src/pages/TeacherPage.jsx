@@ -3,8 +3,6 @@ import { useSelector, useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { USER_ROLES, SOCKET_EVENTS } from '../utils/constants'
 import { useSocket } from '../hooks/useSocket'
-import Header from '../components/common/Header'
-import Timer from '../components/common/Timer'
 import TeacherDashboard from '../components/teacher/TeacherDashboard'
 import CreatePoll from '../components/teacher/CreatePoll'
 import PollResults from '../components/teacher/PollResults'
@@ -57,19 +55,9 @@ const TeacherPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
-      <Timer />
-      
       <div className="max-w-7xl mx-auto px-4 py-6">
         {!currentPoll ? (
-          <div className="grid lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
-              <CreatePoll />
-            </div>
-            <div>
-              <TeacherDashboard />
-            </div>
-          </div>
+          <CreatePoll />
         ) : (
           <div className="grid lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">

@@ -4,6 +4,7 @@ import { setName, setError, clearError } from '../../store/slices/authSlice'
 import { SOCKET_EVENTS } from '../../utils/constants'
 import Button from '../common/Button'
 import { useSocket } from '../../hooks/useSocket'
+import VectorIcon from '/Vector.svg'
 
 const StudentLogin = () => {
   const [inputName, setInputName] = useState('')
@@ -36,25 +37,31 @@ const StudentLogin = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-white flex items-center justify-center px-4">
       <div className="max-w-md w-full">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-          <div className="text-center mb-8">
-            <div className="bg-purple-600 text-white px-3 py-1 rounded-full text-sm font-medium inline-block mb-4">
+        <div className="text-center">
+          {/* Intervue Poll Badge */}
+          <div className="mb-8">
+            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-[#7765DA] to-[#5767D0] text-white px-3 py-1 rounded-full text-sm font-medium">
+              <img src={VectorIcon} alt="Intervue Poll" className="w-4 h-4" />
               Intervue Poll
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">
-              Let's Get Started
-            </h1>
-            <p className="text-gray-600">
-              If you're a student, you'll be able to <strong>submit your answers</strong>, participate in live
-              polls, and see how your responses compare with your classmates
-            </p>
           </div>
 
+          {/* Main Title */}
+          <h1 className="text-4xl font-bold text-[#373737] mb-4">
+            Let's Get Started
+          </h1>
+
+          {/* Description */}
+          <p className="text-lg text-[#6E6E6E] mb-8">
+            If you're a student, you'll be able to <strong>submit your answers</strong>, participate in live polls, and see how your responses compare with your classmates
+          </p>
+
+          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="text-left">
+              <label htmlFor="name" className="block text-lg font-medium text-[#373737] mb-3">
                 Enter your Name
               </label>
               <input
@@ -62,8 +69,8 @@ const StudentLogin = () => {
                 id="name"
                 value={inputName}
                 onChange={(e) => setInputName(e.target.value)}
-                placeholder="Enter your name"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-gray-50"
+                placeholder="your name"
+                className="w-full px-4 py-4 bg-[#F2F2F2] border border-[#F2F2F2] rounded-lg focus:ring-2 focus:ring-[#7765DA] focus:border-transparent text-[#373737] placeholder-[#6E6E6E]"
                 maxLength={50}
               />
             </div>
@@ -74,13 +81,15 @@ const StudentLogin = () => {
               </div>
             )}
 
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={loading || !inputName.trim()}
-            >
-              Continue
-            </Button>
+            <div className="text-center">
+              <Button
+                type="submit"
+                className="min-w-[200px] bg-gradient-to-r from-[#7765DA] to-[#5767D0] hover:from-[#4F0DCE] hover:to-[#7765DA] text-white border-0"
+                disabled={loading || !inputName.trim()}
+              >
+                Continue
+              </Button>
+            </div>
           </form>
         </div>
       </div>

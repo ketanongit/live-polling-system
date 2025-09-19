@@ -1,16 +1,30 @@
 import React from 'react'
-import LoadingSpinner from '../common/LoadingSpinner'
+import VectorIcon from '/Vector.svg'
 
 const WaitingScreen = () => {
   return (
-    <div className="max-w-md mx-auto text-center py-12">
-      <LoadingSpinner size="lg" className="mx-auto mb-6" />
-      <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-        Wait for the teacher to ask questions..
-      </h2>
-      <p className="text-gray-600">
-        You'll see the question here once the teacher starts a new poll.
-      </p>
+    <div className="min-h-screen bg-white flex items-center justify-center px-4">
+      <div className="max-w-md w-full text-center">
+        {/* Intervue Poll Badge */}
+        <div className="mb-8">
+          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-[#7765DA] to-[#5767D0] text-white px-3 py-1 rounded-full text-sm font-medium">
+            <img src={VectorIcon} alt="Intervue Poll" className="w-4 h-4" />
+            Intervue Poll
+          </div>
+        </div>
+
+        {/* Purple Loading Spinner */}
+        <div className="mb-8">
+          <div className="w-16 h-16 mx-auto">
+            <div className="w-16 h-16 border-4 border-[#7765DA] border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        </div>
+
+        {/* Waiting Text */}
+        <h2 className="text-lg font-medium text-[#373737]">
+          Wait for the teacher to ask questions..
+        </h2>
+      </div>
     </div>
   )
 }

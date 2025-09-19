@@ -12,49 +12,70 @@ const PollHistory = ({ onClose }) => {
   }, [socket])
 
   return (
-    <div className="max-h-96 overflow-y-auto">
-      {pollHistory.length === 0 ? (
-        <div className="text-center py-8">
-          <p className="text-gray-500">No poll history available</p>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {pollHistory.map((poll, pollIndex) => (
-            <div key={poll.id} className="border-b border-gray-200 pb-6 last:border-b-0">
-              <div className="mb-4">
-                <h4 className="font-semibold text-gray-900 mb-2">
+    <div>
+      {/* Page Title */}
+      <h1 className="text-4xl font-bold text-[#373737] mb-8">
+        View Poll History
+      </h1>
+
+        {pollHistory.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-[#6E6E6E] text-lg">No poll history available</p>
+          </div>
+        ) : (
+          <div className="space-y-8">
+            {pollHistory.map((poll, pollIndex) => (
+              <div key={poll.id} className="space-y-6">
+                {/* Question Header */}
+                <h2 className="text-2xl font-bold text-[#373737]">
                   Question {pollIndex + 1}
-                </h4>
-                <div className="bg-gray-500 text-white p-3 rounded text-sm">
-                  {poll.question}
+                </h2>
+
+                {/* Question Box */}
+                <div className="bg-[#373737] text-white p-4 rounded-lg">
+                  <p className="font-medium text-lg">{poll.question}</p>
+                </div>
+
+                {/* Answer Options with Progress Bars */}
+                <div className="space-y-4">
+                  {poll.results.map((result, index) => (
+                    <div key={index} className="relative">
+                      {/* Option Container */}
+                      <div className="flex items-center p-4 bg-[#F2F2F2] rounded-lg relative overflow-hidden">
+                        {/* Number Badge */}
+                        <div className="w-8 h-8 rounded-full bg-[#7765DA] text-white flex items-center justify-center text-sm font-bold mr-4 flex-shrink-0 z-10">
+                          {index + 1}
+                        </div>
+                        
+                        {/* Option Text */}
+                        <span className="text-[#373737] font-medium text-lg z-10 relative">
+                          {result.option}
+                        </span>
+                        
+                        {/* Percentage */}
+                        <span className="text-[#373737] font-bold text-lg ml-auto z-10 relative">
+                          {result.percentage}%
+                        </span>
+                        
+                        {/* Progress Bar Background */}
+                        <div 
+                          className="absolute inset-0 bg-[#7765DA] rounded-lg transition-all duration-500 ease-out"
+                          style={{ width: `${result.percentage}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Poll Metadata */}
+                <div className="text-sm text-[#6E6E6E] pt-2">
+                  Total participants: {poll.totalParticipants} | 
+                  {new Date(poll.timestamp).toLocaleString()}
                 </div>
               </div>
-              
-              <div className="space-y-3">
-                {poll.results.map((result, index) => (
-                  <div key={index} className="space-y-1">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-900">{result.option}</span>
-                      <span className="font-medium">{result.percentage}%</span>
-                    </div>
-                    <div className="progress-bar h-2">
-                      <div 
-                        className="progress-fill"
-                        style={{ width: `${result.percentage}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-              
-              <div className="mt-3 text-xs text-gray-500">
-                Total participants: {poll.totalParticipants} | 
-                {new Date(poll.timestamp).toLocaleString()}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
     </div>
   )
 }

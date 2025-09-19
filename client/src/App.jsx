@@ -4,6 +4,7 @@ import HomePage from './pages/HomePage'
 import TeacherPage from './pages/TeacherPage'
 import StudentPage from './pages/StudentPage'
 import KickedOutPage from './pages/KickedOutPage'
+import PollHistoryPage from './pages/PollHistoryPage'
 
 function App() {
   return (
@@ -11,6 +12,7 @@ function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/teacher" element={<TeacherPage />} />
+        <Route path="/teacher/history" element={<PollHistoryPage />} />
         <Route path="/student" element={<StudentPage />} />
         <Route path="/kicked-out" element={<KickedOutPage />} />
       </Routes>
